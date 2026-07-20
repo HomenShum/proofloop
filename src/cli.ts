@@ -59,6 +59,7 @@ import {
   type ProofloopAgentTarget,
 } from "./project";
 import { runProofloopRunner } from "./runner";
+import { runProofloopProgram } from "./program";
 import { runProofloopTarget } from "./targetPlan";
 import {
   buildHostedRunBundle,
@@ -170,6 +171,7 @@ function usage(): string {
     "  solo attest --file <envelope> --gate-receipt <receipt> --out <receipt> --key-id <id>",
     "  solo verify-attestation --file <receipt> [--public-key-file <pem>] [--key-id <id>]",
     "  runner run|resume|status|report   durable append-only task runner with budget and resume",
+    "  program run|resume|status|report  dependency-safe P0 program supervisor over runner subplans",
     "  hosted intake|validate|dashboard|run   create or resume a hosted URL proof packet",
     "  target [--url <url>] [--write-runner-plan] [--write-browser-smoke]   recommend benchmark families and write target/context receipts",
     "  maturity [--dense|--json|--write] [--target-level 5]   judge agent-era codebase/app maturity and missing layers",
@@ -265,6 +267,9 @@ export function runCli(argv: string[]): number | Promise<number> {
 
     case "runner":
       return runRunnerCommand(positional[1], options, root);
+
+    case "program":
+      return runProgramCommand(positional[1], options, root);
 
     case "hosted":
       return runHostedCommand(positional[1], options, root);
@@ -896,6 +901,25 @@ async function runRunnerCommand(sub: string | undefined, options: Record<string,
     ...(num(options["lock-ttl-ms"]) !== undefined ? { lockTtlMs: num(options["lock-ttl-ms"])! } : {}),
     clearStaleLock: options["clear-stale-lock"] === true,
     ...(str(options["crash-after-start"]) !== undefined ? { crashAfterStartTaskId: str(options["crash-after-start"])! } : {}),
+    json: options.json === true,
+  });
+  return result.exitCode;
+}
+
+async function runProgramCommand(sub: string | undefined, options: Record<string, string | boolean>, root: string): Promise<number> {
+  if (sub !== "run" && sub !== "resume" && sub !== "status" && sub !== "report") {
+    console.error("proofloop program: expected `run`, `resume`, `status`, or `report`.");
+    return 2;
+  }
+  const result = await runProofloopProgram({
+    root,
+    subcommand: sub,
+    ...(str(options.plan) !== undefined ? { planPath: str(options.plan)! } : {}),
+    ...(str(options["run-id"]) !== undefined ? { runId: str(options["run-id"])! } : {}),
+    ...(num(options["budget-usd"]) !== undefined ? { budgetUsd: num(options["budget-usd"])! } : {}),
+    ...(num(options["max-arcs"]) !== undefined ? { maxArcs: num(options["max-arcs"])! } : {}),
+    ...(num(options["lock-ttl-ms"]) !== undefined ? { lockTtlMs: num(options["lock-ttl-ms"])! } : {}),
+    clearStaleLock: options["clear-stale-lock"] === true,
     json: options.json === true,
   });
   return result.exitCode;
