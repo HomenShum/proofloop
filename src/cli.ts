@@ -61,6 +61,7 @@ import {
 import { runProofloopRunner } from "./runner";
 import { runProofloopProgram } from "./program";
 import { runNodekitProofBindingVerify, type NodekitProofMinimumLevel } from "./nodekitProof";
+import { runEaseProofVerify } from "./easeProof";
 import { runProofloopTarget } from "./targetPlan";
 import {
   buildHostedRunBundle,
@@ -167,6 +168,7 @@ function usage(): string {
     "  receipt verify --file <path>   verify app-produced proof receipts",
     "  receipt envelope verify --file <path>   verify a proofloop.receipt/v1 envelope",
     "  receipt schema [--json]        locate or print the proofloop.receipt/v1 JSON Schema",
+    "  ease verify --manifest <path> [--out <receipt>]   verify NodeKit EaseProof evidence integrity without inventing usability authority",
     "  solo setup --source <path> [--agent codex|claude-code|both] [--install-deps] [--verify]",
     "  solo ingest|status|gate|resume   validate and inspect Solo interop evidence",
     "  solo attest --file <envelope> --gate-receipt <receipt> --out <receipt> --key-id <id>",
@@ -262,6 +264,9 @@ export function runCli(argv: string[]): number | Promise<number> {
 
     case "receipt":
       return runReceiptCommand(positional[1], positional[2], options, root);
+
+    case "ease":
+      return runEaseCommand(positional[1], options, root);
 
     case "solo":
       return runSoloCommand(positional[1], options, root);
@@ -883,6 +888,24 @@ function runReceiptCommand(
     kind,
     ...(num(options["min-documents"]) !== undefined ? { minDocuments: num(options["min-documents"])! } : {}),
     ...(num(options["min-memory-objects"]) !== undefined ? { minMemoryObjects: num(options["min-memory-objects"])! } : {}),
+    json: options.json === true,
+  });
+}
+
+function runEaseCommand(
+  sub: string | undefined,
+  options: Record<string, string | boolean>,
+  root: string,
+): number {
+  if (sub !== "verify") {
+    console.error("proofloop ease: expected `verify`.");
+    return 2;
+  }
+  const manifestPath = str(options.manifest) ?? "proof/ease/latest/manifest.json";
+  return runEaseProofVerify({
+    root,
+    manifestPath,
+    ...(str(options.out) !== undefined ? { outputPath: str(options.out)! } : {}),
     json: options.json === true,
   });
 }

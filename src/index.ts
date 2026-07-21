@@ -27,6 +27,7 @@ export * from "./contextReport";
 export * from "./receipts";
 export * from "./proofReceipt";
 export * from "./nodekitProof";
+export * from "./easeProof";
 export * from "./agentAdapters";
 export * from "./agentLoop";
 export * from "./codexRelaunch";
